@@ -21,6 +21,9 @@ Place `creditcard.csv` at `ml/creditcard.csv` before deploying.
 ---
 
 ## Architecture
+![Architecture.png](docs/images/Architecture.png)
+
+
 
 ```
 Developer
