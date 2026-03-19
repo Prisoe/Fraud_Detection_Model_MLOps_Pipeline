@@ -6,6 +6,9 @@ End-to-end MLOps pipeline for credit card fraud detection, built on the [MLOps B
 
 ---
 
+## Video
+Youtube Link: https://youtu.be/z-RI2a5krig
+
 ## Dataset
 
 [Kaggle: Credit Card Fraud Detection](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud)
