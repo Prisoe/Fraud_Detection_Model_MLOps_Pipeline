@@ -1,0 +1,18 @@
+# Pinned SageMaker SDK v2 (required for sagemaker.workflow Pipelines)
+sagemaker==2.232.0
+
+# AWS SDK
+boto3>=1.28.0
+
+# ML core
+pandas>=2.0.0
+scikit-learn>=1.2.0
+xgboost>=1.7.0
+joblib>=1.2.0
+numpy>=1.24.0
+
+# Explainability (SHAP for XGBoost)
+shap>=0.42.0
+
+# Data validation
+great-expectations>=0.18.0   # optional — used by validate_data.py for richer checks

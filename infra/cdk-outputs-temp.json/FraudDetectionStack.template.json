@@ -1,0 +1,838 @@
+{
+ "Parameters": {
+  "EmailForAlerts": {
+   "Type": "String",
+   "Description": "Email for fraud-model MLOps alerts."
+  },
+  "AlertsMode": {
+   "Type": "String",
+   "Default": "failures",
+   "AllowedValues": [
+    "failures",
+    "all"
+   ]
+  },
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Resources": {
+  "FraudArtifactsBucketBCC8516C": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketEncryption": {
+     "ServerSideEncryptionConfiguration": [
+      {
+       "ServerSideEncryptionByDefault": {
+        "SSEAlgorithm": "AES256"
+       }
+      }
+     ]
+    },
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
+    },
+    "Tags": [
+     {
+      "Key": "aws-cdk:auto-delete-objects",
+      "Value": "true"
+     }
+    ],
+    "VersioningConfiguration": {
+     "Status": "Enabled"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudArtifactsBucket/Resource"
+   }
+  },
+  "FraudArtifactsBucketPolicy8F4900D9": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "FraudArtifactsBucketBCC8516C"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:DeleteObject*",
+        "s3:GetBucket*",
+        "s3:List*",
+        "s3:PutBucketPolicy"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+          "Arn"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "FraudArtifactsBucketBCC8516C",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "FraudArtifactsBucketBCC8516C",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudArtifactsBucket/Policy/Resource"
+   }
+  },
+  "FraudArtifactsBucketAutoDeleteObjectsCustomResourceFD8A0C5F": {
+   "Type": "Custom::S3AutoDeleteObjects",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "FraudArtifactsBucketBCC8516C"
+    }
+   },
+   "DependsOn": [
+    "FraudArtifactsBucketPolicy8F4900D9"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudArtifactsBucket/AutoDeleteObjectsCustomResource/Default"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-523208255557-us-east-1",
+     "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip"
+    },
+    "Timeout": 900,
+    "MemorySize": 128,
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs22.x",
+    "Description": {
+     "Fn::Join": [
+      "",
+      [
+       "Lambda function for auto-deleting objects in ",
+       {
+        "Ref": "FraudArtifactsBucketBCC8516C"
+       },
+       " S3 bucket."
+      ]
+     ]
+    }
+   },
+   "DependsOn": [
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler",
+    "aws:asset:path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
+    "aws:asset:property": "Code"
+   }
+  },
+  "FraudSageMakerRole50D86D3F": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "sagemaker.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "Description": "Scoped SageMaker execution role for fraud detection pipeline"
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudSageMakerRole/Resource"
+   }
+  },
+  "FraudSageMakerRoleDefaultPolicyD005A70C": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:Abort*",
+        "s3:DeleteObject*",
+        "s3:GetBucket*",
+        "s3:GetObject*",
+        "s3:List*",
+        "s3:PutObject",
+        "s3:PutObjectLegalHold",
+        "s3:PutObjectRetention",
+        "s3:PutObjectTagging",
+        "s3:PutObjectVersionTagging"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "FraudArtifactsBucketBCC8516C",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "FraudArtifactsBucketBCC8516C",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "sagemaker:AddTags",
+        "sagemaker:AssociateTrialComponent",
+        "sagemaker:CreateEndpoint",
+        "sagemaker:CreateEndpointConfig",
+        "sagemaker:CreateExperiment",
+        "sagemaker:CreateModel",
+        "sagemaker:CreateModelPackage",
+        "sagemaker:CreateModelPackageGroup",
+        "sagemaker:CreatePipeline",
+        "sagemaker:CreateProcessingJob",
+        "sagemaker:CreateTrainingJob",
+        "sagemaker:CreateTrial",
+        "sagemaker:CreateTrialComponent",
+        "sagemaker:DeleteEndpoint",
+        "sagemaker:DeleteEndpointConfig",
+        "sagemaker:DeleteModel",
+        "sagemaker:DeletePipeline",
+        "sagemaker:DeleteTags",
+        "sagemaker:DescribeEndpoint",
+        "sagemaker:DescribeEndpointConfig",
+        "sagemaker:DescribeModel",
+        "sagemaker:DescribeModelPackage",
+        "sagemaker:DescribeModelPackageGroup",
+        "sagemaker:DescribePipeline",
+        "sagemaker:DescribePipelineExecution",
+        "sagemaker:DescribeProcessingJob",
+        "sagemaker:DescribeTrainingJob",
+        "sagemaker:DescribeTrialComponent",
+        "sagemaker:InvokeEndpoint",
+        "sagemaker:ListModelPackageGroups",
+        "sagemaker:ListModelPackages",
+        "sagemaker:ListModels",
+        "sagemaker:ListPipelineExecutionSteps",
+        "sagemaker:ListPipelineExecutions",
+        "sagemaker:ListPipelines",
+        "sagemaker:ListProcessingJobs",
+        "sagemaker:ListTags",
+        "sagemaker:ListTrainingJobs",
+        "sagemaker:Search",
+        "sagemaker:StartPipelineExecution",
+        "sagemaker:StopPipelineExecution",
+        "sagemaker:StopProcessingJob",
+        "sagemaker:StopTrainingJob",
+        "sagemaker:UpdateEndpoint",
+        "sagemaker:UpdateModelPackage",
+        "sagemaker:UpdatePipeline",
+        "sagemaker:UpdateTrialComponent"
+       ],
+       "Effect": "Allow",
+       "Resource": "*",
+       "Sid": "SageMakerPipelineOperations"
+      },
+      {
+       "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:GetAuthorizationToken",
+        "ecr:GetDownloadUrlForLayer"
+       ],
+       "Effect": "Allow",
+       "Resource": "*",
+       "Sid": "ECRPull"
+      },
+      {
+       "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": "arn:aws:logs:*:*:log-group:/aws/sagemaker/*",
+       "Sid": "CloudWatchLogs"
+      },
+      {
+       "Action": "cloudwatch:PutMetricData",
+       "Effect": "Allow",
+       "Resource": "*",
+       "Sid": "CloudWatchMetrics"
+      },
+      {
+       "Action": "iam:PassRole",
+       "Condition": {
+        "StringEquals": {
+         "iam:PassedToService": "sagemaker.amazonaws.com"
+        }
+       },
+       "Effect": "Allow",
+       "Resource": "*",
+       "Sid": "PassRole"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "FraudSageMakerRoleDefaultPolicyD005A70C",
+    "Roles": [
+     {
+      "Ref": "FraudSageMakerRole50D86D3F"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudSageMakerRole/DefaultPolicy/Resource"
+   }
+  },
+  "FraudAlertsTopicF24593DF": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "Fraud Detection MLOps Alerts"
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudAlertsTopic/Resource"
+   }
+  },
+  "FraudAlertsTopicTokenSubscription1394A94F5": {
+   "Type": "AWS::SNS::Subscription",
+   "Properties": {
+    "Endpoint": {
+     "Ref": "EmailForAlerts"
+    },
+    "Protocol": "email",
+    "TopicArn": {
+     "Ref": "FraudAlertsTopicF24593DF"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudAlertsTopic/TokenSubscription:1/Resource"
+   }
+  },
+  "FraudAlertsFormatterServiceRole19E421FE": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudAlertsFormatter/ServiceRole/Resource"
+   }
+  },
+  "FraudAlertsFormatterServiceRoleDefaultPolicy08BDAF21": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sns:Publish",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "FraudAlertsTopicF24593DF"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "FraudAlertsFormatterServiceRoleDefaultPolicy08BDAF21",
+    "Roles": [
+     {
+      "Ref": "FraudAlertsFormatterServiceRole19E421FE"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudAlertsFormatter/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "FraudAlertsFormatterF162B201": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-523208255557-us-east-1",
+     "S3Key": "99c02a38c8331d88ec86ced0d3e77f095cdca64bc69657a4fbd3b7457521b9d8.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "TOPIC_ARN": {
+       "Ref": "FraudAlertsTopicF24593DF"
+      },
+      "ALERTS_MODE": {
+       "Ref": "AlertsMode"
+      },
+      "PROJECT_NAME": "fraud-detection"
+     }
+    },
+    "Handler": "handler.main",
+    "Role": {
+     "Fn::GetAtt": [
+      "FraudAlertsFormatterServiceRole19E421FE",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.10",
+    "Timeout": 15
+   },
+   "DependsOn": [
+    "FraudAlertsFormatterServiceRoleDefaultPolicy08BDAF21",
+    "FraudAlertsFormatterServiceRole19E421FE"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudAlertsFormatter/Resource",
+    "aws:asset:path": "asset.99c02a38c8331d88ec86ced0d3e77f095cdca64bc69657a4fbd3b7457521b9d8",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "FraudAlertsFormatterLogGroup327C1942": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "FraudAlertsFormatterF162B201"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 731
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudAlertsFormatter/LogGroup/Resource"
+   }
+  },
+  "FraudPipelineAllRule4D80062C": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventPattern": {
+     "source": [
+      "aws.sagemaker"
+     ],
+     "detail-type": [
+      "SageMaker Model Building Pipeline Execution Status Change"
+     ]
+    },
+    "State": "DISABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "FraudAlertsFormatterF162B201",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudPipelineAllRule/Resource"
+   }
+  },
+  "FraudPipelineAllRuleAllowEventRuleFraudDetectionStackFraudAlertsFormatter90700198254413FB": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "FraudAlertsFormatterF162B201",
+      "Arn"
+     ]
+    },
+    "Principal": "events.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "FraudPipelineAllRule4D80062C",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudPipelineAllRule/AllowEventRuleFraudDetectionStackFraudAlertsFormatter90700198"
+   }
+  },
+  "FraudPipelineFailedRuleEA33CBCA": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventPattern": {
+     "source": [
+      "aws.sagemaker"
+     ],
+     "detail-type": [
+      "SageMaker Model Building Pipeline Execution Status Change"
+     ],
+     "detail": {
+      "currentPipelineExecutionStatus": [
+       "Failed"
+      ]
+     }
+    },
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "FraudAlertsFormatterF162B201",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudPipelineFailedRule/Resource"
+   }
+  },
+  "FraudPipelineFailedRuleAllowEventRuleFraudDetectionStackFraudAlertsFormatter907001985591F4DA": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "FraudAlertsFormatterF162B201",
+      "Arn"
+     ]
+    },
+    "Principal": "events.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "FraudPipelineFailedRuleEA33CBCA",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudPipelineFailedRule/AllowEventRuleFraudDetectionStackFraudAlertsFormatter90700198"
+   }
+  },
+  "FraudStepFailedRule531A4830": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventPattern": {
+     "source": [
+      "aws.sagemaker"
+     ],
+     "detail-type": [
+      "SageMaker Model Building Pipeline Execution Step Status Change"
+     ],
+     "detail": {
+      "stepStatus": [
+       "Failed"
+      ]
+     }
+    },
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "FraudAlertsFormatterF162B201",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudStepFailedRule/Resource"
+   }
+  },
+  "FraudStepFailedRuleAllowEventRuleFraudDetectionStackFraudAlertsFormatter907001981EFA2BAB": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "FraudAlertsFormatterF162B201",
+      "Arn"
+     ]
+    },
+    "Principal": "events.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "FraudStepFailedRule531A4830",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudStepFailedRule/AllowEventRuleFraudDetectionStackFraudAlertsFormatter90700198"
+   }
+  },
+  "FraudStepAllRule9B543D7D": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventPattern": {
+     "source": [
+      "aws.sagemaker"
+     ],
+     "detail-type": [
+      "SageMaker Model Building Pipeline Execution Step Status Change"
+     ]
+    },
+    "State": "DISABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "FraudAlertsFormatterF162B201",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudStepAllRule/Resource"
+   }
+  },
+  "FraudStepAllRuleAllowEventRuleFraudDetectionStackFraudAlertsFormatter907001981F592FC6": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "FraudAlertsFormatterF162B201",
+      "Arn"
+     ]
+    },
+    "Principal": "events.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "FraudStepAllRule9B543D7D",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudStepAllRule/AllowEventRuleFraudDetectionStackFraudAlertsFormatter90700198"
+   }
+  },
+  "FraudModelPackageRuleEF0A98A9": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventPattern": {
+     "source": [
+      "aws.sagemaker"
+     ],
+     "detail-type": [
+      "SageMaker Model Package State Change"
+     ]
+    },
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "FraudAlertsFormatterF162B201",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudModelPackageRule/Resource"
+   }
+  },
+  "FraudModelPackageRuleAllowEventRuleFraudDetectionStackFraudAlertsFormatter90700198A0165E71": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "FraudAlertsFormatterF162B201",
+      "Arn"
+     ]
+    },
+    "Principal": "events.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "FraudModelPackageRuleEF0A98A9",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/FraudModelPackageRule/AllowEventRuleFraudDetectionStackFraudAlertsFormatter90700198"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/91WS2sbMRD+LZ2jUbZpfGl9s5M0FPJwbUMPJoSxNHEUa6VFDwez7H8v0j5YO9CmaSikJ+3ONzP65rl7kp0MP2fHH/DJHXGxOVJylZVzj3zDTu/1FC3m5MkyfHJ3pRtm5STwDfllCStl+GYaVkryMefkHIxgAAxIc7srvDQaRjAf3l2Nr8cX52fAYEvWSaNJwMjbQAws5WaLamqU5DsYgSDnrdkBAwzenJEiTzerR+Le1SbVbWRVU2D1URtHPuk1keir1XijPEFHFZOYZ+XMKFqWgM6FnMRkB6MSCis1lwWqMecmaN9EVOtEgzFv4hpAxSJdbmXRE5WAQizMtPXTRrYsq9uEeo/84ZtWUlOHwQBeACa/h+5+fdn/ZPIXZcpR45pEcinJRad7st3YNrovIfK6CqaGjNRY06+RcWuwMBF55ue5WIi5R085ae/2MvdvxW/FPSWlzkfFnHZZuTCF5MsShHSFwt015tQb6ISyeVh1Y7cswUdht3pEYWTXEIU13nCjYASUo1TA4F4qT7ZbOIMD0Q/pH67IOVzTxIhWQxCKS/Ke7PdAoc+oz6ViCvOVwKz8GjRv2NmgvWyCYPCAWiiyzRs3ogWijgm+C2MrrdExVf29ct4XpwbqJfc1YAqhJZtqQTaXzqVg3PAOnSPvsnE8mDJrl5WXZn1hTSiWJajm8aBIrUbFaBtrnZWzkDYtaVypuPvvUTlikOApxrTqONXOBMupS7lHqRa7onHdBrJns/yNUTfOaNfxy9A29Z/c3ApeT2Pfw7vi9C4r9oY311s7KKoqdhqcN/mMai9pryW0ERzgU2u2UpCNPxwsDdDc41rqdbS5Cb4IvmLaCMoe3cftyXH26Ut2/OHRSXnUrIxsVp8/Adlv1C6hCQAA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "FraudDetectionStack/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "ArtifactsBucketName": {
+   "Value": {
+    "Ref": "FraudArtifactsBucketBCC8516C"
+   },
+   "Export": {
+    "Name": "FraudArtifactsBucketName"
+   }
+  },
+  "SageMakerRoleArn": {
+   "Value": {
+    "Fn::GetAtt": [
+     "FraudSageMakerRole50D86D3F",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "FraudSageMakerRoleArn"
+   }
+  },
+  "AlertsTopicArn": {
+   "Value": {
+    "Ref": "FraudAlertsTopicF24593DF"
+   },
+   "Export": {
+    "Name": "FraudAlertsTopicArn"
+   }
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

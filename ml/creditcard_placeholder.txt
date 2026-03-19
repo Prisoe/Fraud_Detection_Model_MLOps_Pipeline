@@ -1,0 +1,10 @@
+Download creditcard.csv from:
+  https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
+
+Then place it at:
+  ml/creditcard.csv
+
+The file should have these columns:
+  Time, V1..V28, Amount, Class
+
+  284,807 rows | 492 fraud (Class=1) | 284,315 legitimate (Class=0)
